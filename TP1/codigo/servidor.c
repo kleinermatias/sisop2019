@@ -25,8 +25,8 @@ int main(int argc, char *argv[])
 
 	struct Users usuario1, usuario2;
 
-	strcpy(usuario1.id, "hola");
-	strcpy(usuario1.pass, "chau");
+	strcpy(usuario1.id, "mati");
+	strcpy(usuario1.pass, "ragnar");
 	strcpy(usuario2.id, "agus");
 	strcpy(usuario2.pass, "anij");
 	arregloUsuarios[0] = usuario1;
@@ -76,25 +76,24 @@ int main(int argc, char *argv[])
 		pid = fork();
 		if (pid < 0)
 		{
-			perror("fork");
+			perror("ERROR en fork");
 			exit(1);
 		}
 
 		if (pid == 0)
-		{ // proceso hijo
+		{
+			// proceso hijo
 			close(sockfd);
-
 			while (1)
 			{
 				memset(buffer, 0, TAM);
-
 				maquina_estado = autenticacion(newsockfd);
 
 				if (maquina_estado == 1)
 				{
 					printf("YUPIIIIIIIIIIII");
 				}
-				if (maquina_estado == 0)
+				else if (maquina_estado == 0)
 				{
 					printf("NOP");
 					exit(0);
@@ -131,13 +130,12 @@ int main(int argc, char *argv[])
 
 int autenticacion(int socket)
 {
-	static char autenticacion_id[TAM];
-	static char autenticacion_pass[TAM];
-	static int contador_intentos = 1;
-	int n;
-	int retorno = 0;
-	
+	char autenticacion_id[TAM];
+	char autenticacion_pass[TAM];
 	char buffer[TAM];
+	int n, comparo_id_usuario, comparo_pass_usuario, contador_intentos;
+
+	contador_intentos = 1;
 
 	while (contador_intentos <= 4)
 	{
@@ -148,7 +146,7 @@ int autenticacion(int socket)
 			perror("lectura de socket");
 			exit(1);
 		}
-		
+
 		strtok(buffer, "\n");
 		strcpy(autenticacion_id, buffer);
 
@@ -169,17 +167,9 @@ int autenticacion(int socket)
 		strtok(buffer, "\n");
 		strcpy(autenticacion_pass, buffer);
 
-		
-
-		
-
-		int comparo_id_usuario = 1;
-		int comparo_pass_usuario = 1;
-
 		for (int i = 0; i < sizeof(arregloUsuarios); i++)
 		{
 			comparo_id_usuario = strcmp(arregloUsuarios[i].id, autenticacion_id);
-
 			if (comparo_id_usuario == 0)
 			{
 				comparo_pass_usuario = strcmp(arregloUsuarios[i].pass, autenticacion_pass);
@@ -187,36 +177,29 @@ int autenticacion(int socket)
 				{
 					return 1;
 				}
-				else
-				{
-					retorno = 0;
-				}
-			}
-			else
-			{
-				retorno = 0;
 			}
 		}
-		contador_intentos = contador_intentos + 1;
+
+		contador_intentos++;
 
 		if (contador_intentos == 4)
 		{
 			n = write(socket, "FIN", strlen("FIN"));
-					if (n < 0)
-					{
-						perror("escritura en socket");
-						exit(0);
-					}
-			retorno = 0;
+			if (n < 0)
+			{
+				perror("escritura en socket");
+				exit(0);
+			}
 		}
-		else {
-			n = write(socket, "Obtuve su mensaje", 18);
-		if (n < 0)
+		else
 		{
-			perror("escritura en socket");
-			exit(1);
-		}
+			n = write(socket, "Obtuve su mensaje", 18);
+			if (n < 0)
+			{
+				perror("escritura en socket");
+				exit(1);
+			}
 		}
 	}
-	return retorno;
+	return 0;
 }
