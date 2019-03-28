@@ -5,6 +5,16 @@
 #include <unistd.h>
 #define TAM 80
 
+
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
+
+
 struct Users
 {
 	char id[20];
@@ -92,6 +102,12 @@ int main(int argc, char *argv[])
 				if (maquina_estado == 1)
 				{
 					printf("YUPIIIIIIIIIIII");
+					n = write(newsockfd, "SI", 3);
+					if (n < 0)
+					{
+						perror("escritura en socket");
+						exit(1);
+					}
 				}
 				else if (maquina_estado == 0)
 				{

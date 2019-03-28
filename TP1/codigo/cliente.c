@@ -7,6 +7,14 @@
 #include <errno.h>
 #include <unistd.h>
 
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
+
 #define TAM 80
 
 int loggin(int sockfd);
@@ -15,7 +23,6 @@ int main(int argc, char *argv[])
 {
 	int sockfd, servlen;
 	struct sockaddr_un serv_addr;
-	//char buffer[TAM];
 	int terminar = 0;
 
 	if (argc < 2)
@@ -43,8 +50,12 @@ int main(int argc, char *argv[])
 
 	while (1)
 	{
-		loggin(sockfd);
+		int prueba;
+		prueba = loggin(sockfd);
 
+		if (prueba == 1) {
+			printf("SEEEEEEEEEEEEEEEE");
+		}
 		if (terminar)
 		{
 			printf("Finalizando ejecución\n");
@@ -59,8 +70,8 @@ int loggin(int sockfd)
 	char buffer[TAM];
 	int terminar = 0;
 	int n;
-	memset(buffer, '\0', TAM);
-	printf("Ingrese el mensaje a enviar: ");
+	inicio: memset(buffer, '\0', TAM);
+	printf(ANSI_COLOR_GREEN " USUARIO " ANSI_COLOR_RESET);
 	fgets(buffer, TAM - 1, stdin);
 
 	n = write(sockfd, buffer, strlen(buffer));
@@ -90,6 +101,17 @@ int loggin(int sockfd)
 	{
 		terminar = 1;
 	}
+
+	else if (strcmp(buffer, "SI") == 0)
+	{
+		return 1;
+	}
+
+	else {
+		goto inicio;
+	}
+
+
 
 	if (terminar)
 	{
