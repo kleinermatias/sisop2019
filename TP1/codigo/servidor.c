@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 				}
 
 				strcat(temp, "@");
-				memset(hostname, 0, sizeof(hostname));
+				bzero(hostname, sizeof(hostname));
 				gethostname(hostname, sizeof(hostname));
 				strcat(temp, hostname);
 
@@ -172,7 +172,7 @@ int autenticacion(int socket)
 
 	while (contador_intentos <= 4)
 	{
-		memset(buffer, '\0', TAM);
+		bzero(buffer, sizeof(buffer)); //limpio contenido
 		control_errores = read(socket, buffer, TAM);
 		if (control_errores < 0)
 		{
@@ -190,7 +190,7 @@ int autenticacion(int socket)
 			exit(1);
 		}
 
-		memset(buffer, '\0', TAM);
+		bzero(buffer, sizeof(buffer));
 		control_errores = read(socket, buffer, TAM);
 		if (control_errores < 0)
 		{
@@ -241,7 +241,7 @@ int autenticacion(int socket)
 }
 
 /**
- * @brief Funcion encargada del logueo en el servidor. Se mantiene en un while hasta los 3 intentos de ingresar user-pass. Pasado dichos intentos, envia un FIN al cliente para indicar que se cierre.
+ * @brief Funcion que se encarga de parsear el comando del usuario y ejecutar la instruccion.
  * @author Kleiner Matias
  * @param socket El descriptor del socket por donde se reciben los datos y se escribe la respuesta a los mismos.
  * @date 30/03/2019
@@ -249,19 +249,16 @@ int autenticacion(int socket)
  */
 int parse_func(int socket)
 {
-	//guardo id y usuario que llegan en estos buffer.
-
 	char buffer[TAM];
 	int control_errores;
 
-	memset(buffer, 0, TAM);
+	bzero(buffer, sizeof(buffer));
 	control_errores = read(socket, buffer, TAM);
 	if (control_errores < 0)
 	{
 		perror("lectura de socket");
 		exit(1);
 	}
-	printf("Recibí: %s \n", buffer);
 
 	strtok(buffer, "\n");
 	if (!strcmp("fin", buffer))
@@ -270,10 +267,10 @@ int parse_func(int socket)
 		exit(0);
 	}
 
-	if (strcmp(buffer, "update firmware.bin") == 0)
+	else if (strcmp(buffer, "update firmware.bin") == 0)
 	{
-		printf("update firmware.bin");
-		memset(buffer, '\0', TAM);
+		printf("actualizando...\n");
+		bzero(buffer, sizeof(buffer));
 		control_errores = write(socket, "recibi update", sizeof("recibi update"));
 		if (control_errores < 0)
 		{
@@ -282,10 +279,11 @@ int parse_func(int socket)
 		}
 		update_firmware(socket);
 	}
+
 	else if (strcmp(buffer, "start scanning") == 0)
 	{
-		printf("start scanning");
-		memset(buffer, '\0', TAM);
+		printf("start scanning\n");
+		bzero(buffer, sizeof(buffer));
 		control_errores = write(socket, "recibi start scanning", sizeof("recibi start scanning"));
 		if (control_errores < 0)
 		{
@@ -293,10 +291,11 @@ int parse_func(int socket)
 			exit(1);
 		}
 	}
+
 	else if (strcmp(buffer, "obtener telemetrı́a") == 0)
 	{
-		printf("obtener telemetrı́a");
-		memset(buffer, '\0', TAM);
+		printf("obtener telemetrı́a\n");
+		bzero(buffer, sizeof(buffer));
 		control_errores = write(socket, "recibi obtener telemetria", sizeof("recibi obtener telemetria"));
 		if (control_errores < 0)
 		{
@@ -304,10 +303,11 @@ int parse_func(int socket)
 			exit(1);
 		}
 	}
+
 	else
 	{
 		printf("incorrecto");
-		memset(buffer, '\0', TAM);
+		bzero(buffer, sizeof(buffer));
 		control_errores = write(socket, "incorrecto", sizeof("incorrecto"));
 		if (control_errores < 0)
 		{
@@ -316,13 +316,11 @@ int parse_func(int socket)
 		}
 	}
 
-	fflush(stdout);
-
 	return 0;
 }
 
 /**
- * @brief Funcion encargada del logueo en el servidor. Se mantiene en un while hasta los 3 intentos de ingresar user-pass. Pasado dichos intentos, envia un FIN al cliente para indicar que se cierre.
+ * @brief Funcion encargada de actualizar el firmware del cliente. Lee el binario y se lo envia.
  * @author Kleiner Matias
  * @param socket El descriptor del socket por donde se reciben los datos y se escribe la respuesta a los mismos.
  * @date 30/03/2019
@@ -331,56 +329,55 @@ int parse_func(int socket)
 int update_firmware(int socket)
 {
 
-	FILE *picture;
-	int size, read_size, stat, packet_index;
-	char send_buffer[TAM], read_buffer[TAM];
+	FILE *binary;
+	int size, read_size, packet_index;
+	char send_buffer[TAM], buffer[TAM];
 	packet_index = 1;
 
-	picture = fopen("file.txt", "r");
-	printf("Getting Picture Size\n");
-
-	if (picture == NULL)
+	read(socket, buffer, sizeof(buffer));
+	if (strcmp(buffer, "ACK") == 0)
 	{
-		printf("Error Opening Image File");
+		printf("\nCliente recibio size.\n");
+	}
+	else
+	{
+		printf("\nError en update_firmware.\n");
 	}
 
-	fseek(picture, 0, SEEK_END);
-	size = ftell(picture);
-	fseek(picture, 0, SEEK_SET);
-	printf("Total Picture size: %i\n", size);
-	
-	
-	//Send Picture Size
-	printf("Sending Picture Size\n");
-	usleep(1000);
-	write(socket, &size, sizeof(size));
-	
-	//Send Picture as Byte Array
-	printf("Sending Picture as Byte Array\n");
+	binary = fopen("./serverBIN/file.txt", "r");
+	printf("Obteniendo tamanio de binario..\n");
 
-	do
-	{ //Read while we get errors that are due to signals.
-		stat = read(socket, &read_buffer, 255);
-		printf("Bytes read: %i\n", stat);
-	} while (stat < 0);
-
-	printf("Received data in socket\n");
-
-	while (!feof(picture))
+	if (binary == NULL)
 	{
-		//while(packet_index = 1){
+		printf("Error abriendo binario");
+	}
+
+	fseek(binary, 0, SEEK_END);
+	size = ftell(binary);
+	fseek(binary, 0, SEEK_SET);
+	printf("Tamanio total del binario: %i\n", size);
+
+	//Send binary Size
+	printf("Enviando tamanio %d\n", size);
+
+	write(socket, &size, sizeof(size));
+
+	//Send binary as Byte Array
+	printf("Enviando binario\n");
+
+	read(socket, &buffer, sizeof(buffer));
+
+	while (!feof(binary))
+	{
+
 		//Read from the file into our send buffer
-		read_size = fread(send_buffer, 1, sizeof(send_buffer) - 1, picture);
+		read_size = fread(send_buffer, 1, sizeof(send_buffer) - 1, binary);
 
 		//Send data through our socket
-		do
-		{
-			stat = write(socket, send_buffer, read_size);
-		} while (stat < 0);
+		write(socket, send_buffer, read_size);
 
 		printf("Packet Number: %i\n", packet_index);
 		printf("Packet Size Sent: %i\n", read_size);
-		printf(" \n");
 		printf(" \n");
 
 		packet_index++;

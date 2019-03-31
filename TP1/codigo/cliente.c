@@ -62,9 +62,8 @@ int main(int argc, char *argv[])
 
 	if (control_error == 1)
 	{
-
-		memset(hostname, '\0', sizeof(hostname));
-		memset(buffer, '\0', sizeof(buffer));
+		bzero(hostname, sizeof(hostname));
+		bzero(buffer, sizeof(buffer));
 		control_error = read(sockfd, buffer, sizeof(buffer));
 		if (control_error < 0)
 		{
@@ -100,7 +99,8 @@ void send_to_server(int sockfd)
 {
 	static char buffer[TAM];
 	static int control_error;
-	memset(buffer, '\0', TAM);
+
+	bzero(buffer, sizeof(buffer));
 	fgets(buffer, TAM - 1, stdin);
 	control_error = write(sockfd, buffer, sizeof(buffer));
 	if (control_error < 0)
@@ -110,71 +110,71 @@ void send_to_server(int sockfd)
 	}
 }
 
+void send_to_server_ack(int sockfd)
+{
+	static int control_error;
+	control_error = write(sockfd, "ACK", sizeof("ACK"));
+	if (control_error < 0)
+	{
+		printf("Error escribir en socket\n");
+		exit(0);
+	}
+}
+
 void func_detect(int sockfd)
 {
-	static char buffr[TAM];
+	static char buffer[TAM];
 	static int control_error;
-	memset(buffr, '\0', TAM);
-	control_error = read(sockfd, buffr, TAM);
+	bzero(buffer, sizeof(buffer));
+	control_error = read(sockfd, buffer, TAM);
 	if (control_error < 0)
 	{
 		perror("lectura de socket");
 		exit(1);
 	}
-	if (strcmp(buffr, "recibi update") == 0)
+	if (strcmp(buffer, "recibi update") == 0)
 	{
+
 		update_firmware(sockfd);
-		fflush(stdout);
 	}
-	else if (strcmp(buffr, "recibi start scanning") == 0)
+	else if (strcmp(buffer, "recibi start scanning") == 0)
 	{
 	}
 
-	else if (strcmp(buffr, "recibi obtener telemetria") == 0)
+	else if (strcmp(buffer, "recibi obtener telemetria") == 0)
 	{
 	}
 }
 
 int update_firmware(int sockfd)
 {
-	// Start function
 
 	int recv_size = 0, size = 0, read_size, write_size, packet_index = 1, stat;
+	char binaryarray[TAM];
+	FILE *binary;
 
-	char imagearray[10241];
-	FILE *image;
+	send_to_server_ack(sockfd); //sino hacia 2 write seguidos y se rompia todo
 
-	printf("NADAAAA");
-	fflush(stdout);
-	
-	
-	//Find the size of the image
-	
+	//Find the size of the binary
 	stat = read(sockfd, &size, sizeof(size));
-	
 
 	printf("Packet received.\n");
 	printf("Packet size: %i\n", stat);
-	printf("Image size: %i\n", size);
+	printf("binary size: %i\n", size);
 	printf(" \n");
 	fflush(stdout);
 
-	
-
 	//Send our verification signal
-	do
-	{
-		stat = write(sockfd, &size, sizeof(size));
-	} while (stat < 0);
+	write(sockfd, &size, sizeof(size));
 
 	printf("Reply sent\n");
 	printf(" \n");
 
-	image = fopen("file1.txt", "w");
+	binary = fopen("./clienteBIN/file.txt", "w");
 
-	if (image == NULL)
+	if (binary == NULL)
 	{
-		printf("Error has occurred. Image file could not be opened\n");
+		printf("Error has occurred. binary file could not be opened\n");
 		return -1;
 	}
 
@@ -187,7 +187,6 @@ int update_firmware(int sockfd)
 
 	while (recv_size < size)
 	{
-		//while(packet_index < 2){
 
 		FD_ZERO(&fds);
 		FD_SET(sockfd, &fds);
@@ -195,24 +194,28 @@ int update_firmware(int sockfd)
 		buffer_fd = select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
 
 		if (buffer_fd < 0)
+		{
 			printf("error: bad file descriptor set.\n");
+		}
 
-		if (buffer_fd == 0)
+		else if (buffer_fd == 0)
+		{
 			printf("error: buffer read timeout expired.\n");
+		}
 
-		if (buffer_fd > 0)
+		else
 		{
 			do
 			{
-				read_size = read(sockfd, imagearray, 10241);
+				read_size = read(sockfd, binaryarray, TAM);
 			} while (read_size < 0);
 
 			printf("Packet number received: %i\n", packet_index);
 			printf("Packet size: %i\n", read_size);
 
-			//Write the currently read data into our image file
-			write_size = fwrite(imagearray, 1, read_size, image);
-			printf("Written image size: %i\n", write_size);
+			//Write the currently read data into our binary file
+			write_size = fwrite(binaryarray, 1, read_size, binary);
+			printf("Written binary size: %i\n", write_size);
 
 			if (read_size != write_size)
 			{
@@ -222,14 +225,14 @@ int update_firmware(int sockfd)
 			//Increment the total number of bytes read
 			recv_size += read_size;
 			packet_index++;
-			printf("Total received image size: %i\n", recv_size);
+			printf("Total received binary size: %i\n", recv_size);
 			printf(" \n");
 			printf(" \n");
 		}
 	}
 
-	fclose(image);
-	printf("Image successfully Received!\n");
+	fclose(binary);
+	printf("binary successfully Received!\n");
 	return 1;
 }
 
@@ -245,82 +248,84 @@ int loggin(int sockfd)
 	char buffer[TAM];
 	int terminar = 0;
 
-	int n;
+	int n, loop;
+	loop = 1;
 
 	int user_or_pass = 0;
 
-inicio:
-	memset(buffer, '\0', TAM);
-	memset(hostname, '\0', sizeof(hostname));
-	char *name;
-	name = getlogin();
-
-	gethostname(hostname, sizeof(hostname));
-
-	printf("[");
-	printf(ANSI_COLOR_GREEN);
-	printf(name);
-	printf("@");
-	printf(hostname);
-	printf(ANSI_COLOR_RESET);
-	printf("]");
-	printf("$ ");
-	fflush(stdout);
-
-	fgets(buffer, TAM - 1, stdin);
-	n = write(sockfd, buffer, strlen(buffer));
-	if (n < 0)
+	while (loop == 1)
 	{
-		perror("escritura de socket");
-		exit(1);
-	}
+		bzero(buffer, sizeof(buffer));
+		bzero(hostname, sizeof(hostname));
+		char *name;
+		name = getlogin();
 
-	// Verificando si se escribió: fin
-	buffer[strlen(buffer) - 1] = '\0';
-	if (!strcmp("fin", buffer))
-	{
-		terminar = 1;
-	}
-	if (user_or_pass == 0)
-	{
-		strcpy(user, buffer);
-		user_or_pass++;
-	}
-	else
-	{
-		user_or_pass = 0;
-	}
+		gethostname(hostname, sizeof(hostname));
 
-	memset(buffer, '\0', TAM);
-	n = read(sockfd, buffer, TAM);
-	if (n < 0)
-	{
-		perror("lectura de socket");
-		exit(1);
-	}
+		printf("[");
+		printf(ANSI_COLOR_GREEN);
+		printf(name);
+		printf("@");
+		printf(hostname);
+		printf(ANSI_COLOR_RESET);
+		printf("]");
+		printf("$ ");
+		fflush(stdout);
 
-	//printf("Respuesta: %s\n", buffer);
-	if (strcmp(buffer, "FIN") == 0)
-	{
-		terminar = 1;
-	}
-
-	else if (strcmp(buffer, "SI") == 0)
-	{
-		n = write(sockfd, buffer, sizeof(buffer));
+		fgets(buffer, TAM - 1, stdin);
+		n = write(sockfd, buffer, strlen(buffer));
 		if (n < 0)
 		{
 			perror("escritura de socket");
 			exit(1);
 		}
-		return 1;
-	}
 
-	else
-	{
-		goto inicio;
-	}
+		// Verificando si se escribió: fin
+		buffer[strlen(buffer) - 1] = '\0';
+		if (!strcmp("fin", buffer))
+		{
+			terminar = 1;
+		}
+		if (user_or_pass == 0)
+		{
+			strcpy(user, buffer);
+			user_or_pass++;
+		}
+		else
+		{
+			user_or_pass = 0;
+		}
+		bzero(buffer, sizeof(buffer));
+		n = read(sockfd, buffer, TAM);
+		if (n < 0)
+		{
+			perror("lectura de socket");
+			exit(1);
+		}
 
+		//printf("Respuesta: %s\n", buffer);
+		if (strcmp(buffer, "FIN") == 0)
+		{
+			terminar = 1;
+		}
+
+		else if (strcmp(buffer, "SI") == 0)
+		{
+			n = write(sockfd, buffer, sizeof(buffer));
+			if (n < 0)
+			{
+				perror("escritura de socket");
+				exit(1);
+			}
+			loop = 0;
+			return 1;
+		}
+
+		else
+		{
+			loop = 1;
+		}
+	}
 	if (terminar)
 	{
 		printf("Finalizando ejecución\n");
