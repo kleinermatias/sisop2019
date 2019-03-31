@@ -344,7 +344,7 @@ int update_firmware(int socket)
 		printf("\nError en update_firmware.\n");
 	}
 
-	binary = fopen("./serverBIN/file.txt", "r");
+	binary = fopen("./serverBIN/firmware.bin", "rb");
 	printf("Obteniendo tamanio de binario..\n");
 
 	if (binary == NULL)

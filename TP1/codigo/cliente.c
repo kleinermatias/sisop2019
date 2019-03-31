@@ -23,6 +23,7 @@ static char user[TAM];
 int loggin(int sockfd);
 void func_detect(int sockfd);
 void send_to_server(int sockfd);
+void send_to_server_ack(int sockfd);
 int update_firmware(int sockfd);
 
 int main(int argc, char *argv[])
@@ -134,8 +135,15 @@ void func_detect(int sockfd)
 	}
 	if (strcmp(buffer, "recibi update") == 0)
 	{
-
-		update_firmware(sockfd);
+		control_error = update_firmware(sockfd);
+		if (control_error < 0)
+		{
+			exit(1);
+		}
+		else
+		{
+			printf("Update completo.\n");
+		}
 	}
 	else if (strcmp(buffer, "recibi start scanning") == 0)
 	{
@@ -170,7 +178,7 @@ int update_firmware(int sockfd)
 	printf("Reply sent\n");
 	printf(" \n");
 
-	binary = fopen("./clienteBIN/file.txt", "w");
+	binary = fopen("./clienteBIN/firmware.bin", "wb");
 
 	if (binary == NULL)
 	{
@@ -178,61 +186,34 @@ int update_firmware(int sockfd)
 		return -1;
 	}
 
-	//Loop while we have not received the entire file yet
-
-	struct timeval timeout = {10, 0};
-
-	fd_set fds;
-	int buffer_fd;
-
 	while (recv_size < size)
 	{
 
-		FD_ZERO(&fds);
-		FD_SET(sockfd, &fds);
+		read_size = read(sockfd, binaryarray, TAM);
 
-		buffer_fd = select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
+		printf("Packet number received: %i\n", packet_index);
+		printf("Packet size: %i\n", read_size);
 
-		if (buffer_fd < 0)
+		//Write the currently read data into our binary file
+		write_size = fwrite(binaryarray, 1, read_size, binary);
+		printf("Written binary size: %i\n", write_size);
+
+		if (read_size != write_size)
 		{
-			printf("error: bad file descriptor set.\n");
+			printf("error in read write\n");
+			return -1;
 		}
 
-		else if (buffer_fd == 0)
-		{
-			printf("error: buffer read timeout expired.\n");
-		}
-
-		else
-		{
-			do
-			{
-				read_size = read(sockfd, binaryarray, TAM);
-			} while (read_size < 0);
-
-			printf("Packet number received: %i\n", packet_index);
-			printf("Packet size: %i\n", read_size);
-
-			//Write the currently read data into our binary file
-			write_size = fwrite(binaryarray, 1, read_size, binary);
-			printf("Written binary size: %i\n", write_size);
-
-			if (read_size != write_size)
-			{
-				printf("error in read write\n");
-			}
-
-			//Increment the total number of bytes read
-			recv_size += read_size;
-			packet_index++;
-			printf("Total received binary size: %i\n", recv_size);
-			printf(" \n");
-			printf(" \n");
-		}
+		//Increment the total number of bytes read
+		recv_size += read_size;
+		packet_index++;
+		printf("Total received binary size: %i\n", recv_size);
+		printf(" \n");
+		printf(" \n");
 	}
 
 	fclose(binary);
-	printf("binary successfully Received!\n");
+	printf("Binario recibido. Reiniciando\n");
 	return 1;
 }
 
