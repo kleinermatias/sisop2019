@@ -331,7 +331,7 @@ int update_firmware(int socket)
 
 	FILE *binary;
 	int size, read_size, packet_index;
-	char send_buffer[TAM], buffer[TAM];
+	char send_buffer[99], buffer[TAM];
 	packet_index = 1;
 
 	read(socket, buffer, sizeof(buffer));
@@ -378,7 +378,7 @@ int update_firmware(int socket)
 
 		printf("Packet Number: %i\n", packet_index);
 		printf("Packet Size Sent: %i\n", read_size);
-		printf(" \n");
+		printf("\n");
 
 		packet_index++;
 

@@ -20,11 +20,22 @@
 static char hostname[TAM];
 static char user[TAM];
 
+struct Satelite
+{
+	char id[TAM];
+	char uptime[TAM];
+	char version[TAM];
+	char consumo[TAM];
+};
+
+static struct Satelite sat;
 int loggin(int sockfd);
 void func_detect(int sockfd);
 void send_to_server(int sockfd);
 void send_to_server_ack(int sockfd);
 int update_firmware(int sockfd);
+void status_sat_read(void);
+void firm_read(void);
 
 int main(int argc, char *argv[])
 {
@@ -59,6 +70,14 @@ int main(int argc, char *argv[])
 	/** 
 	 * Llamo a la funcion log. 
 	**/
+	status_sat_read();
+	printf("%s\n", sat.id);
+	printf("%s\n", sat.uptime);
+	printf("%s\n", sat.consumo);
+	printf("%s\n", sat.version);
+	
+
+	//fflush(stdout);
 	control_error = loggin(sockfd);
 
 	if (control_error == 1)
@@ -154,12 +173,55 @@ void func_detect(int sockfd)
 	}
 }
 
+void status_sat_read()
+{
+	FILE *version_file;
+	FILE *consumo_file;
+	char send_buffer[TAM];
+	char aux[TAM];
+	char aux_pid[TAM];
+	bzero(sat.id, sizeof(sat.id));
+	bzero(sat.uptime, sizeof(sat.uptime));
+	bzero(sat.consumo, sizeof(sat.consumo));
+	bzero(sat.version, sizeof(sat.version));
+
+	strcpy(sat.id, "ARSAT");
+	strcpy(sat.uptime, "12:00");
+	
+	
+
+	version_file = fopen("./clienteBIN/firmware.bin", "rb");
+	bzero(send_buffer, sizeof(send_buffer));
+	fread(send_buffer, 1, sizeof(send_buffer) - 1, version_file);
+	strcpy(sat.version, send_buffer);
+	fclose(version_file);
+
+	strcpy(aux, "ps -Ao vsize,pid,pcpu | grep ");
+	sprintf(aux_pid, "%ld", (long)getpid());
+	strcat(aux, aux_pid);
+	strcat(aux," >> ./clienteBIN/top.info");
+	
+	system("rm ./clienteBIN/top.info");
+	system(aux);
+	consumo_file = fopen("./clienteBIN/top.info", "r");
+	bzero(send_buffer, sizeof(send_buffer));
+	fread(send_buffer, 1, sizeof(send_buffer) - 1, consumo_file);
+	strtok(send_buffer, "\n");
+	strcpy(sat.consumo, send_buffer);
+	fclose(consumo_file);
+	
+	
+}
+
+
+
 int update_firmware(int sockfd)
 {
 
 	int recv_size = 0, size = 0, read_size, write_size, packet_index = 1, stat;
 	char binaryarray[TAM];
 	FILE *binary;
+	FILE *version_file;
 
 	send_to_server_ack(sockfd); //sino hacia 2 write seguidos y se rompia todo
 
@@ -189,15 +251,13 @@ int update_firmware(int sockfd)
 	while (recv_size < size)
 	{
 
+		bzero(binaryarray, sizeof(binaryarray));
 		read_size = read(sockfd, binaryarray, TAM);
-
-		printf("Packet number received: %i\n", packet_index);
-		printf("Packet size: %i\n", read_size);
+		printf("Paquete: %i\n", packet_index);
 
 		//Write the currently read data into our binary file
 		write_size = fwrite(binaryarray, 1, read_size, binary);
-		printf("Written binary size: %i\n", write_size);
-
+		
 		if (read_size != write_size)
 		{
 			printf("error in read write\n");
@@ -207,13 +267,20 @@ int update_firmware(int sockfd)
 		//Increment the total number of bytes read
 		recv_size += read_size;
 		packet_index++;
+
 		printf("Total received binary size: %i\n", recv_size);
-		printf(" \n");
 		printf(" \n");
 	}
 
 	fclose(binary);
 	printf("Binario recibido. Reiniciando\n");
+
+	version_file = fopen("./clienteBIN/firmware.bin", "rb");
+	bzero(binaryarray, sizeof(binaryarray));
+	fread(binaryarray, 1, sizeof(binaryarray) - 1, version_file);
+	strcpy(sat.version, binaryarray);
+	fclose(version_file);
+
 	return 1;
 }
 
