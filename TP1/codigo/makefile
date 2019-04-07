@@ -1,5 +1,6 @@
 # makefile para el trabajo practico "1" de sistemas operativos 2 
 # usar tabulador (no espacios) en make
+all: servidor cliente
 
 servidor : servidor.c
 	gcc -Wall -Werror -pedantic -o eServidor servidor.c

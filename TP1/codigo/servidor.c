@@ -1,51 +1,18 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <unistd.h>
-#include <string.h>
-#define TAM 1024
+#include "include/servidor.h"
 
-#define ANSI_COLOR_RED "\x1b[31m"
-#define ANSI_COLOR_GREEN "\x1b[32m"
-#define ANSI_COLOR_YELLOW "\x1b[33m"
-#define ANSI_COLOR_BLUE "\x1b[34m"
-#define ANSI_COLOR_MAGENTA "\x1b[35m"
-#define ANSI_COLOR_CYAN "\x1b[36m"
-#define ANSI_COLOR_RESET "\x1b[0m"
 
-struct Users
-{
-	char id[20];
-	char pass[20];
-};
-
-struct Users arregloUsuarios[2];
-
-int autenticacion(int socket);
-int parse_func(int socket);
-int update_firmware(int sockfd);
 
 int main(int argc, char *argv[])
 {
-
-	int sockfd, newsockfd, servlen, clilen, n, pid;
-	int control_error;
+	int sockfd, newsockfd, servlen, clilen, pid;
 	struct sockaddr_un cli_addr, serv_addr;
-	char buffer[TAM];
-
-	struct Users usuario1, usuario2;
-
-	strcpy(usuario1.id, "matias");
-	strcpy(usuario1.pass, "ragnar");
-	strcpy(usuario2.id, "agus");
-	strcpy(usuario2.pass, "anij");
-	arregloUsuarios[0] = usuario1;
-	arregloUsuarios[1] = usuario2;
-
-	char temp[1024];
-
-	char hostname[1024];
+	static int flag_user_ready_log;
+	flag_user_ready_log = 0;
+	
+	/* Cargo mis dos usuarios*/
+	cargo_usuarios();
+	strcpy(arg0, argv[0]);
+	strcpy(arg1, argv[1]);
 
 	/* Se toma el nombre del socket de la línea de comandos */
 	if (argc != 2)
@@ -54,9 +21,9 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	if ((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
+	else if ((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
 	{
-		perror("creación de  socket");
+		perror("Error en creación de  socket");
 		exit(1);
 	}
 
@@ -70,7 +37,7 @@ int main(int argc, char *argv[])
 
 	if (bind(sockfd, (struct sockaddr *)&serv_addr, servlen) < 0)
 	{
-		perror("ligadura");
+		perror("Error en ligadura");
 		exit(1);
 	}
 
@@ -84,307 +51,45 @@ int main(int argc, char *argv[])
 		newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, (socklen_t *)&clilen);
 		if (newsockfd < 0)
 		{
-			perror("accept");
+			perror("Error en accept sockfd");
 			exit(1);
 		}
+		
 
 		pid = fork();
 		if (pid < 0)
 		{
-			perror("ERROR en fork");
+			perror("fork");
 			exit(1);
 		}
 
 		if (pid == 0)
-		{
-			// proceso hijo
+		{ // proceso hijo
+
 			close(sockfd);
-
-			control_error = autenticacion(newsockfd);
-
-			if (control_error == 1)
-			{
-				printf("Envio user@host \n");
-				printf(temp);
-				printf("\n");
-				n = write(newsockfd, "SI", sizeof("SI"));
-				if (n < 0)
-				{
-					perror("escritura en socket");
-					exit(1);
-				}
-				n = read(newsockfd, buffer, TAM);
-				if (n < 0)
-				{
-					perror("lectura de socket");
-					exit(1);
-				}
-
-				strcat(temp, "@");
-				bzero(hostname, sizeof(hostname));
-				gethostname(hostname, sizeof(hostname));
-				strcat(temp, hostname);
-
-				n = write(newsockfd, temp, sizeof(temp));
-				if (n < 0)
-				{
-					perror("escritura en socket");
-					exit(1);
-				}
-			}
-			else if (control_error == 0)
-			{
-				printf("ERROR en autenticacion.");
-				exit(0);
-			}
 
 			while (1)
 			{
-				parse_func(newsockfd);
+
+				//Antes de poder mandar cualquier comando, tengo que autenticarme.
+				while (flag_user_ready_log == 0)
+				{
+					flag_user_ready_log = autenticacion();
+				}
+
+				if (flag_user_ready_log == 1)
+				{
+					printf(prompt_user_log);
+					fflush(stdout);
+					obtener_funcion(newsockfd);
+				}
 			}
 		}
 		else
 		{
-			printf("SERVIDOR: Nuevo cliente, que atiende el proceso hijo: %d\n", pid);
 			close(newsockfd);
 		}
 	}
 	return 0;
 }
 
-/**
- * @brief Funcion encargada del logueo en el servidor. Se mantiene en un while hasta los 3 intentos de ingresar user-pass. Pasado dichos intentos, envia un FIN al cliente para indicar que se cierre.
- * @author Kleiner Matias
- * @param socket El descriptor del socket por donde se reciben los datos y se escribe la respuesta a los mismos.
- * @date 30/03/2019
- * @return 1 en caso correcto, @c 0 otherwise.
- */
-int autenticacion(int socket)
-{
-	//guardo id y usuario que llegan en estos buffer.
-	char autenticacion_id[TAM];
-	char autenticacion_pass[TAM];
-
-	char buffer[TAM];
-	int control_errores, comparo_id_usuario, comparo_pass_usuario, contador_intentos;
-
-	contador_intentos = 1; // inicio en 1. Con cada intento de user-pass incremento. Cuando llego a 4, mando FIN y cierro cliente.
-
-	while (contador_intentos <= 4)
-	{
-		bzero(buffer, sizeof(buffer)); //limpio contenido
-		control_errores = read(socket, buffer, TAM);
-		if (control_errores < 0)
-		{
-			perror("lectura de socket");
-			exit(1);
-		}
-
-		strtok(buffer, "\n");
-		strcpy(autenticacion_id, buffer);
-
-		control_errores = write(socket, "Obtuve su mensaje", sizeof("Obtuve su mensaje"));
-		if (control_errores < 0)
-		{
-			perror("escritura en socket");
-			exit(1);
-		}
-
-		bzero(buffer, sizeof(buffer));
-		control_errores = read(socket, buffer, TAM);
-		if (control_errores < 0)
-		{
-			perror("lectura de socket");
-			exit(1);
-		}
-		strtok(buffer, "\n");
-		strcpy(autenticacion_pass, buffer);
-
-		//recorro en un for los usuarios. Si encuentro alguno, uso el pass asignado para ese usuario y comparo con lo que recibi.
-		for (int i = 0; i < sizeof(arregloUsuarios); i++)
-		{
-			comparo_id_usuario = strcmp(arregloUsuarios[i].id, autenticacion_id);
-			if (comparo_id_usuario == 0)
-			{
-				comparo_pass_usuario = strcmp(arregloUsuarios[i].pass, autenticacion_pass);
-				if (comparo_pass_usuario == 0)
-				{
-					//retorno 1 en caso de coincidencia user-pass.
-					return 1;
-				}
-			}
-		}
-
-		contador_intentos++;
-
-		if (contador_intentos == 4)
-		{
-			control_errores = write(socket, "FIN", sizeof("FIN"));
-			if (control_errores < 0)
-			{
-				perror("escritura en socket");
-				exit(0);
-			}
-		}
-
-		else
-		{
-			control_errores = write(socket, "Obtuve su mensaje", sizeof("Obtuve su mensaje"));
-			if (control_errores < 0)
-			{
-				perror("escritura en socket");
-				exit(1);
-			}
-		}
-	}
-	return 0;
-}
-
-/**
- * @brief Funcion que se encarga de parsear el comando del usuario y ejecutar la instruccion.
- * @author Kleiner Matias
- * @param socket El descriptor del socket por donde se reciben los datos y se escribe la respuesta a los mismos.
- * @date 30/03/2019
- * @return 1 en caso correcto, @c 0 otherwise.
- */
-int parse_func(int socket)
-{
-	char buffer[TAM];
-	int control_errores;
-
-	bzero(buffer, sizeof(buffer));
-	control_errores = read(socket, buffer, TAM);
-	if (control_errores < 0)
-	{
-		perror("lectura de socket");
-		exit(1);
-	}
-
-	strtok(buffer, "\n");
-	if (!strcmp("fin", buffer))
-	{
-		printf("PROCESO %d. Como recibí 'fin', termino la ejecución.\n\n", getpid());
-		exit(0);
-	}
-
-	else if (strcmp(buffer, "update firmware.bin") == 0)
-	{
-		printf("actualizando...\n");
-		bzero(buffer, sizeof(buffer));
-		control_errores = write(socket, "recibi update", sizeof("recibi update"));
-		if (control_errores < 0)
-		{
-			perror("escritura en socket");
-			exit(1);
-		}
-		update_firmware(socket);
-	}
-
-	else if (strcmp(buffer, "start scanning") == 0)
-	{
-		printf("start scanning\n");
-		bzero(buffer, sizeof(buffer));
-		control_errores = write(socket, "recibi start scanning", sizeof("recibi start scanning"));
-		if (control_errores < 0)
-		{
-			perror("escritura en socket");
-			exit(1);
-		}
-	}
-
-	else if (strcmp(buffer, "obtener telemetrı́a") == 0)
-	{
-		printf("obtener telemetrı́a\n");
-		bzero(buffer, sizeof(buffer));
-		control_errores = write(socket, "recibi obtener telemetria", sizeof("recibi obtener telemetria"));
-		if (control_errores < 0)
-		{
-			perror("escritura en socket");
-			exit(1);
-		}
-	}
-
-	else
-	{
-		printf("incorrecto");
-		bzero(buffer, sizeof(buffer));
-		control_errores = write(socket, "incorrecto", sizeof("incorrecto"));
-		if (control_errores < 0)
-		{
-			perror("escritura en socket");
-			exit(1);
-		}
-	}
-
-	return 0;
-}
-
-/**
- * @brief Funcion encargada de actualizar el firmware del cliente. Lee el binario y se lo envia.
- * @author Kleiner Matias
- * @param socket El descriptor del socket por donde se reciben los datos y se escribe la respuesta a los mismos.
- * @date 30/03/2019
- * @return 1 en caso correcto, @c 0 otherwise.
- */
-int update_firmware(int socket)
-{
-
-	FILE *binary;
-	int size, read_size, packet_index;
-	char send_buffer[99], buffer[TAM];
-	packet_index = 1;
-
-	read(socket, buffer, sizeof(buffer));
-	if (strcmp(buffer, "ACK") == 0)
-	{
-		printf("\nCliente recibio size.\n");
-	}
-	else
-	{
-		printf("\nError en update_firmware.\n");
-	}
-
-	binary = fopen("./serverBIN/firmware.bin", "rb");
-	printf("Obteniendo tamanio de binario..\n");
-
-	if (binary == NULL)
-	{
-		printf("Error abriendo binario");
-	}
-
-	fseek(binary, 0, SEEK_END);
-	size = ftell(binary);
-	fseek(binary, 0, SEEK_SET);
-	printf("Tamanio total del binario: %i\n", size);
-
-	//Send binary Size
-	printf("Enviando tamanio %d\n", size);
-
-	write(socket, &size, sizeof(size));
-
-	//Send binary as Byte Array
-	printf("Enviando binario\n");
-
-	read(socket, &buffer, sizeof(buffer));
-
-	while (!feof(binary))
-	{
-
-		//Read from the file into our send buffer
-		read_size = fread(send_buffer, 1, sizeof(send_buffer) - 1, binary);
-
-		//Send data through our socket
-		write(socket, send_buffer, read_size);
-
-		printf("Packet Number: %i\n", packet_index);
-		printf("Packet Size Sent: %i\n", read_size);
-		printf("\n");
-
-		packet_index++;
-
-		//Zero out our send buffer
-		bzero(send_buffer, sizeof(send_buffer));
-	}
-
-	return 0;
-}
