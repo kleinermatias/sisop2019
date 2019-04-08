@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/un.h>
-#include <errno.h>
+#include <netinet/in.h>
+#include <netdb.h> 
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <string.h>
@@ -38,7 +39,7 @@ void send_to_server_ack(int sockfd);
 int update_firmware(int sockfd);
 void status_sat_read(void);
 void firm_read(void);
-int obtener_telemetria(int socket, socklen_t size, struct sockaddr_un prueba);
+int obtener_telemetria(int socket, int size, struct sockaddr_in prueba);
 int start_scanning(int sockfd);
 
 
@@ -90,20 +91,24 @@ void func_detect(int sockfd)
 	{
 		status_sat_read();
 		int descriptor_socket;
-		struct sockaddr_un struct_cliente;
-		socklen_t tamano_direccion;
-	
+		struct sockaddr_in struct_cliente;
+		int tamano_direccion;
+		struct hostent *server;
+		server = gethostbyname( "127.0.0.1" );
         printf("obteniendo telemetrı́a\n");
         /* Creacion de socket */
-		if(( descriptor_socket = socket(AF_UNIX, SOCK_DGRAM, 0) ) < 0 ) 
+		if(( descriptor_socket = socket(AF_INET, SOCK_DGRAM, 0) ) < 0 ) 
 			perror("socket" );
 
 		/* Inicialización y establecimiento de la estructura del cliente */
 		memset( &struct_cliente, 0, sizeof( struct_cliente ) );
-		struct_cliente.sun_family = AF_UNIX;
-		strncpy( struct_cliente.sun_path, "./popo", sizeof( struct_cliente.sun_path ) );
+		struct_cliente.sin_family = AF_INET;
+		struct_cliente.sin_port = htons( 8183  );
+		struct_cliente.sin_addr = *( (struct in_addr *)server->h_addr );
+		memset( &(struct_cliente.sin_zero), '\0', 8 );
 
-        tamano_direccion = sizeof( struct_cliente );
+        tamano_direccion = sizeof( struct sockaddr );
+		
 		obtener_telemetria(descriptor_socket,tamano_direccion,struct_cliente);
 		close(descriptor_socket);
 	}
@@ -234,7 +239,7 @@ int update_firmware(int sockfd)
  * @date 30/03/2019
  * @return 1 en caso correcto, @c 0 otherwise.
  */
-int obtener_telemetria(int socket, socklen_t size, struct sockaddr_un prueba)
+int obtener_telemetria(int socket, int size, struct sockaddr_in prueba)
 {
 	int control_error;
 	char buffer[TAM];
@@ -256,7 +261,7 @@ int obtener_telemetria(int socket, socklen_t size, struct sockaddr_un prueba)
 	strcat(buffer, "\n");
 	
 	printf("%s\n", buffer);
-	control_error = sendto( socket, buffer, sizeof(buffer), 0, (struct sockaddr *)&prueba, sizeof(prueba) );
+	control_error = sendto( socket, buffer, sizeof(buffer), 0, (struct sockaddr *)&prueba, size );
 	
 	if (control_error < 0)
 	{

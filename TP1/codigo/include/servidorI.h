@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <unistd.h>
 #include <string.h>
+#include <sys/types.h> 
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <termios.h>
-
+#include <unistd.h>
 
 #define TAM 1024
 #define UDP_TAM 64000
@@ -26,14 +26,13 @@ struct Users
 static char prompt_user_log[TAM] = {0};
 struct Users arregloUsuarios[2];
 
-static char arg0[TAM] = {0};
-static char arg1[TAM] = {0};
+
 
 int autenticacion();
 int obtener_funcion(int sockfd);
 int update_firmware(int sockfd);
 int start_scanning(int sockfd);
-int obtener_telemetria(int socket, socklen_t size, struct sockaddr_un prueba);
+int obtener_telemetria(int socket, socklen_t size, struct sockaddr_in prueba);
 void cargo_usuarios(void);
 
 /**
@@ -204,30 +203,30 @@ int obtener_funcion(int sockett)
     else if (strcmp(buffer, "obtener telemetria") == 0)
     {   
 
-	struct sockaddr_un struct_servidor;
+	struct sockaddr_in struct_servidor;
 	socklen_t tamano_direccion;
     write(sockett, "obtener telemetria", sizeof("obtener telemetria"));
 	
         printf("obteniendo telemetrı́a\n");
         /* Creacion de socket */
-        if ((socket_server = socket(AF_UNIX, SOCK_DGRAM, 0)) < 0)
+        if ((socket_server = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
         {
             perror("socket");
             exit(1);
         }
         /* Remover el nombre de archivo si existe */
-        unlink("./popo");
+        unlink("8083");
         /* Inicialización y establecimiento de la estructura del servidor */
         memset(&struct_servidor, 0, sizeof(struct_servidor));
-        struct_servidor.sun_family = AF_UNIX;
-        strncpy(struct_servidor.sun_path, "./popo", sizeof(struct_servidor.sun_path));
+        struct_servidor.sin_family = AF_INET;
+       struct_servidor.sin_port = htons( 8183 );
         /* Ligadura del socket de servidor a una dirección */
-        if( ( bind( socket_server, (struct sockaddr *)&struct_servidor, SUN_LEN(&struct_servidor ))) < 0 ) {
+        if( bind( socket_server, (struct sockaddr *) &struct_servidor, sizeof(struct_servidor) ) < 0 ) {
             perror( "bind" );
             exit(1);
         }
 
-        printf( "Socket disponible: %s\n", struct_servidor.sun_path );
+        printf( "Socket disponible: %d\n", struct_servidor.sin_port );
 
         tamano_direccion = sizeof( struct_servidor );
         obtener_telemetria(socket_server,tamano_direccion,struct_servidor);
@@ -330,7 +329,7 @@ int update_firmware(int socket)
  * @date 30/03/2019
  * @return 1 en caso correcto, @c 0 otherwise.
  */
-int obtener_telemetria(int socket, socklen_t size, struct sockaddr_un prueba)
+int obtener_telemetria(int socket, socklen_t size, struct sockaddr_in prueba)
 {
     
     char buffer[TAM];
