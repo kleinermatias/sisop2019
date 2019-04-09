@@ -85,7 +85,7 @@ int autenticacion()
     strcat(prompt, ANSI_COLOR_RESET);
     strcat(prompt, "]");
     strcat(prompt, "$ ");
-    printf(prompt);
+    printf("%s",prompt);
     fflush(stdout);
     fgets(buffer, sizeof(buffer), stdin);
     strtok(buffer, "\n");
@@ -97,9 +97,9 @@ int autenticacion()
         bzero(buffer, sizeof(buffer));
         printf("[");
         printf(ANSI_COLOR_GREEN);
-        printf(name);
+        printf("%s",name);
         printf("@");
-        printf(hostname);
+        printf("%s",hostname);
         printf(ANSI_COLOR_RESET);
         printf("]");
         printf("$ ");
@@ -342,7 +342,7 @@ int obtener_telemetria(int socket, socklen_t size, struct sockaddr_un prueba)
         perror("lectura de socket");
         exit(1);
     }
-    printf(buffer);
+    printf("%s",buffer);
 
     return 1;
 }

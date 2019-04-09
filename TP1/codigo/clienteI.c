@@ -9,20 +9,20 @@ int main(int argc, char *argv[])
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
 	
-
+	printf("%i\n",getpid());
 	/* Inicio referencia de mi var time1, para luego poder hacer la resta de time2-time1 y sacar asi el uptime.*/
 	gettimeofday(&time1, NULL);
 
 	
 
-	puerto = atoi( "8182" );
+	puerto = atoi( "8282" );
 	sockfd = socket( AF_INET, SOCK_STREAM, 0 );
 	if ( sockfd < 0 ) {
 		perror( "ERROR apertura de socket" );
 		exit( 1 );
 	}
 
-	server = gethostbyname( "10.0.0.3" );
+	server = gethostbyname( "10.0.0.7" );
 	if (server == NULL) {
 		fprintf( stderr,"Error, no existe el host\n" );
 		exit( 0 );
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 	while (1)
 	{
 		/* Siempre me quedo en este while para atender las peticiones del servidor.*/
-		func_detect(sockfd);
+		func_detect(sockfd,argv);
 	}
 	return 0;
 }

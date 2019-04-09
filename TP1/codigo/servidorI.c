@@ -44,8 +44,6 @@ int main(int argc, char *argv[])
 			perror("Error en accept sockfd");
 			exit(1);
 		}
-		
-
 		pid = fork();
 		if (pid < 0)
 		{
@@ -69,7 +67,7 @@ int main(int argc, char *argv[])
 
 				if (flag_user_ready_log == 1)
 				{
-					printf(prompt_user_log);
+					printf("%s",prompt_user_log);
 					fflush(stdout);
 					obtener_funcion(newsockfd);
 				}

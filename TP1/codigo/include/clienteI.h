@@ -33,10 +33,10 @@ struct Satelite
 };
 
 static struct Satelite sat;
-void func_detect(int sockfd);
+void func_detect(int sockfd,char *argv[]);
 void send_to_server(int sockfd);
 void send_to_server_ack(int sockfd);
-int update_firmware(int sockfd);
+int update_firmware(int sockfd, char *argv[]);
 void status_sat_read(void);
 void firm_read(void);
 int obtener_telemetria(int socket, int size, struct sockaddr_in prueba);
@@ -57,7 +57,7 @@ void send_to_server_ack(int sockfd)
 	}
 }
 
-void func_detect(int sockfd)
+void func_detect(int sockfd, char *argv[])
 {
 	char buffer[TAM] = {0};
 	int control_error = 0;
@@ -71,7 +71,7 @@ void func_detect(int sockfd)
 	}
 	else if (strcmp(buffer, "update firmware.bin") == 0)
 	{
-		control_error = update_firmware(sockfd);
+		control_error = update_firmware(sockfd,argv);
 		if (control_error < 0)
 		{
 			exit(1);
@@ -94,7 +94,7 @@ void func_detect(int sockfd)
 		struct sockaddr_in struct_cliente;
 		int tamano_direccion;
 		struct hostent *server;
-		server = gethostbyname( "127.0.0.1" );
+		server = gethostbyname( "10.0.0.7" );
         printf("obteniendo telemetrı́a\n");
         /* Creacion de socket */
 		if(( descriptor_socket = socket(AF_INET, SOCK_DGRAM, 0) ) < 0 ) 
@@ -163,7 +163,7 @@ void status_sat_read()
 	fclose(top_file);
 }
 
-int update_firmware(int sockfd)
+int update_firmware(int sockfd,char *argv[])
 {
 
 	int recv_size = 0, size = 0, read_size, write_size, packet_index = 1, stat;
@@ -224,7 +224,7 @@ int update_firmware(int sockfd)
 
     write(sockfd, "ACK", sizeof("ACK"));
 	
-
+	execvp(argv[0],argv);
 	exit(0);
 
 	return 1;
@@ -242,7 +242,7 @@ int update_firmware(int sockfd)
 int obtener_telemetria(int socket, int size, struct sockaddr_in prueba)
 {
 	int control_error;
-	char buffer[TAM];
+	char buffer[TAM] = {0};
 
 	//printf("MANDO\n");
 	//sendto( socket, "ACK", sizeof("ACK"), 0, (struct sockaddr *)&prueba, sizeof(prueba) );
