@@ -391,7 +391,7 @@ int start_scanning(int socket)
     printf("Reply sent\n");
     printf(" \n");
 
-    binary = fopen("./clienteBIN/foto.jpg", "wb");
+    binary = fopen("./servidorBIN/foto.jpg", "wb");
 
     if (binary == NULL)
     {

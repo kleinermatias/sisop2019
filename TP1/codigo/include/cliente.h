@@ -286,7 +286,7 @@ int start_scanning(int socket)
 
 	send_to_server_ack(socket); 
 
-	binary = fopen("./serverBIN/foto.jpg", "rb");
+	binary = fopen("./clienteBIN/foto.jpg", "rb");
 	printf("Obteniendo tamanio de binario..\n");
 
 	if (binary == NULL)
