@@ -417,9 +417,9 @@ int start_scanning(int socket)
         //Increment the total number of bytes read
         recv_size += read_size;
         packet_index++;
-
-        //printf("Total received binary size: %i\n", recv_size);
-        //printf(" \n");
+	printf("Total received binary size: %i\n", read_size);
+       // printf("Total received binary size: %i\n", recv_size);
+        printf(" \n");
     }
 
     fclose(binary);

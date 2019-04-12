@@ -403,7 +403,9 @@ int start_scanning(int socket)
     {
 
         bzero(binaryarray, sizeof(binaryarray));
+        usleep(300);
         read_size = read(socket, binaryarray, sizeof(binaryarray));
+        write(socket, "ACK", sizeof("ACK"));
         printf("Paquete: %i\n", packet_index);
 
         //Write the currently read data into our binary file

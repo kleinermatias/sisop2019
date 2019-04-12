@@ -312,15 +312,16 @@ int start_scanning(int socket)
 	while (!feof(binary))
 	{
 
+		
 		//Read from the file into our send buffer
 		read_size = fread(send_buffer, 1, sizeof(send_buffer) - 1, binary);
 
 		//Send data through our socket
 		write(socket, send_buffer, read_size);
-
-		/*
+		printf("%i",read_size);
+		read(socket, buffer, sizeof(buffer));
 		printf("Packet Number: %i\n", packet_index);
-		printf("Packet Size Sent: %i\n", read_size);
+		/*printf("Packet Size Sent: %i\n", read_size);
 		printf("\n");
 		*/
 
