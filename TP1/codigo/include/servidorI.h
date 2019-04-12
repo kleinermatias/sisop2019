@@ -8,7 +8,7 @@
 #include <unistd.h>
 
 #define TAM 1024
-#define UDP_TAM 64000
+#define UDP_TAM 1400
 #define ANSI_COLOR_RED "\x1b[31m"
 #define ANSI_COLOR_GREEN "\x1b[32m"
 #define ANSI_COLOR_YELLOW "\x1b[33m"
@@ -302,9 +302,9 @@ int update_firmware(int socket)
         //Send data through our socket
         write(socket, send_buffer, read_size);
 
-        printf("Packet Number: %i\n", packet_index);
-        printf("Packet Size Sent: %i\n", read_size);
-        printf("\n");
+        //printf("Packet Number: %i\n", packet_index);
+        //printf("Packet Size Sent: %i\n", read_size);
+        //printf("\n");
 
         packet_index++;
 
@@ -356,7 +356,7 @@ int obtener_telemetria(int socket, socklen_t size, struct sockaddr_in prueba)
  */
 int start_scanning(int socket)
 {
-    int recv_size = 0, size = 0, read_size, write_size, packet_index = 1, stat;
+    int recv_size = 0, size = 0, read_size, packet_index = 1, stat;
     char binaryarray[UDP_TAM] = {0};
     char buffer[TAM] = {0};
     FILE *binary;
@@ -391,7 +391,7 @@ int start_scanning(int socket)
     printf("Reply sent\n");
     printf(" \n");
 
-    binary = fopen("./servidorBIN/foto.jpg", "wb");
+    binary = fopen("./serverBIN/foto.jpg", "wb");
 
     if (binary == NULL)
     {
@@ -404,27 +404,24 @@ int start_scanning(int socket)
 
         bzero(binaryarray, sizeof(binaryarray));
         read_size = read(socket, binaryarray, sizeof(binaryarray));
-        printf("Paquete: %i\n", packet_index);
+        //printf("Paquete: %i\n", packet_index);
 
         //Write the currently read data into our binary file
-        write_size = fwrite(binaryarray, 1, read_size, binary);
+        fwrite(binaryarray, 1, read_size, binary);
 
-        if (read_size != write_size)
-        {
-            printf("error in read write\n");
-            return -1;
-        }
+        
 
         //Increment the total number of bytes read
         recv_size += read_size;
         packet_index++;
-	printf("Total received binary size: %i\n", read_size);
-       // printf("Total received binary size: %i\n", recv_size);
-        printf(" \n");
+	    //printf("Total received binary size: %i\n", read_size);
+        // printf("Total received binary size: %i\n", recv_size);
+        //printf(" \n");
     }
 
     fclose(binary);
-    printf("Binario recibido. Reiniciando\n");
+    printf("Total received size: %i\n", recv_size);
+    printf("Foto recibida.\n");
 
     return 1;
 }

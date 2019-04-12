@@ -13,7 +13,11 @@ int main(int argc, char *argv[])
 	/* Inicio referencia de mi var time1, para luego poder hacer la resta de time2-time1 y sacar asi el uptime.*/
 	gettimeofday(&time1, NULL);
 
-	
+	if (argc < 2)
+	{
+		fprintf(stderr, "Falta ip che gorreaaa %s\n", argv[0]);
+		exit(0);
+	}
 
 	puerto = atoi( "8282" );
 	sockfd = socket( AF_INET, SOCK_STREAM, 0 );
@@ -22,7 +26,7 @@ int main(int argc, char *argv[])
 		exit( 1 );
 	}
 
-	server = gethostbyname( "10.0.0.7" );
+	server = gethostbyname( argv[1] );
 	if (server == NULL) {
 		fprintf( stderr,"Error, no existe el host\n" );
 		exit( 0 );

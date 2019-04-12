@@ -18,7 +18,7 @@
 #define ANSI_COLOR_RESET "\x1b[0m"
 
 #define TAM 1024
-#define UDP_TAM 64000
+#define UDP_TAM 1400
 
 
 
@@ -94,7 +94,7 @@ void func_detect(int sockfd, char *argv[])
 		struct sockaddr_in struct_cliente;
 		int tamano_direccion;
 		struct hostent *server;
-		server = gethostbyname( "10.0.0.7" );
+		server = gethostbyname( argv[1] );
         printf("obteniendo telemetrı́a\n");
         /* Creacion de socket */
 		if(( descriptor_socket = socket(AF_INET, SOCK_DGRAM, 0) ) < 0 ) 
@@ -336,7 +336,7 @@ int start_scanning(int socket)
 		//Zero out our send buffer
 		bzero(send_buffer, sizeof(send_buffer));
 	}
-	
+	printf("Se envio la jotooo\n");
 	return 1;
 
 }
