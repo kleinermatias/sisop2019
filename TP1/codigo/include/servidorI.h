@@ -317,6 +317,7 @@ int update_firmware(int socket)
     if (strcmp(buffer, "ACK") == 0)
     {
         printf("\nServidor recibio ACK.\n");
+        close(socket);
     }
     exit(0);
     return 0;

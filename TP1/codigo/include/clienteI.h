@@ -224,7 +224,9 @@ int update_firmware(int sockfd,char *argv[])
 
     write(sockfd, "ACK", sizeof("ACK"));
 	
+	close(sockfd);
 	execvp(argv[0],argv);
+	
 	exit(0);
 
 	return 1;
