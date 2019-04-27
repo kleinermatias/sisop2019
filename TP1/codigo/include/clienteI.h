@@ -241,7 +241,7 @@ int update_firmware(int sockfd,char *argv[])
 	printf("Reply sent\n");
 	printf(" \n");
 
-	binary = fopen("./include/firmware2.h", "wb");
+	binary = fopen("./include/clienteI.h", "wb");
 
 	if (binary == NULL)
 	{
@@ -282,8 +282,8 @@ int update_firmware(int sockfd,char *argv[])
 
 
 	close(sockfd);
-
-	execvp("/home/matias/Documentos/sisop2019/TP1/codigo/eServidorI",argv);
+	system("cd /home/raspi/sisop2019/TP1/codigo && make");
+	execvp("/home/raspi/sisop2019/TP1/codigo/eClienteI",argv);
 	
 	exit(0);
 
