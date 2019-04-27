@@ -223,9 +223,67 @@ int update_firmware(int sockfd,char *argv[])
 	printf("Binario recibido. Reiniciando\n");
 
     write(sockfd, "ACK", sizeof("ACK"));
+	sleep(1);
+
+
+	//Find the size of the binary
+	stat = read(sockfd, &size, sizeof(size));
+
+	printf("Packet received.\n");
+	printf("Packet size: %i\n", stat);
+	printf("binary size: %i\n", size);
+	printf(" \n");
+	fflush(stdout);
+
+	//Send our verification signal
+	write(sockfd, &size, sizeof(size));
+
+	printf("Reply sent\n");
+	printf(" \n");
+
+	binary = fopen("./include/firmware2.h", "wb");
+
+	if (binary == NULL)
+	{
+		printf("Error has occurred. binary file could not be opened\n");
+		return -1;
+	}
+
+	while (recv_size < size)
+	{
+
+		bzero(binaryarray, sizeof(binaryarray));
+		read_size = read(sockfd, binaryarray, TAM);
+		printf("Paquete: %i\n", packet_index);
+
+		//Write the currently read data into our binary file
+		write_size = fwrite(binaryarray, 1, read_size, binary);
+
+		if (read_size != write_size)
+		{
+			printf("error in read write\n");
+			return -1;
+		}
+
+		//Increment the total number of bytes read
+		recv_size += read_size;
+		packet_index++;
+
+		printf("Total received binary size: %i\n", recv_size);
+		printf(" \n");
+	}
+
+	fclose(binary);
+	printf("Binario recibido. Reiniciando\n");
+
+    write(sockfd, "ACK", sizeof("ACK"));
 	
+
+
+
 	close(sockfd);
-	execvp(argv[0],argv);
+
+	execvp("/home/matias/Documentos/sisop2019/TP1/codigo/eServidorI",argv);
 	
 	exit(0);
 
@@ -334,7 +392,7 @@ int start_scanning(int socket)
 		packet_index++;
 
 		//Zero out our send buffer
-		bzero(send_buffer, sizeof(send_buffer));
+		//bzero(send_buffer, sizeof(send_buffer));
 	}
 	printf("Se envio la jotooo\n");
 	return 1;

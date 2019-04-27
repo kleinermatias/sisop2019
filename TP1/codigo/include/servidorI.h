@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h> 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <termios.h>
@@ -25,8 +25,6 @@ struct Users
 
 static char prompt_user_log[TAM] = {0};
 struct Users arregloUsuarios[2];
-
-
 
 int autenticacion();
 int obtener_funcion(int sockfd);
@@ -84,7 +82,7 @@ int autenticacion()
     strcat(prompt, ANSI_COLOR_RESET);
     strcat(prompt, "]");
     strcat(prompt, "$ ");
-    printf("%s",prompt);
+    printf("%s", prompt);
     fflush(stdout);
     fgets(buffer, sizeof(buffer), stdin);
     strtok(buffer, "\n");
@@ -96,9 +94,9 @@ int autenticacion()
         bzero(buffer, sizeof(buffer));
         printf("[");
         printf(ANSI_COLOR_GREEN);
-        printf("%s",name);
+        printf("%s", name);
         printf("@");
-        printf("%s",hostname);
+        printf("%s", hostname);
         printf(ANSI_COLOR_RESET);
         printf("]");
         printf("$ ");
@@ -201,12 +199,12 @@ int obtener_funcion(int sockett)
     }
 
     else if (strcmp(buffer, "obtener telemetria") == 0)
-    {   
+    {
 
-	struct sockaddr_in struct_servidor;
-	socklen_t tamano_direccion;
-    write(sockett, "obtener telemetria", sizeof("obtener telemetria"));
-	
+        struct sockaddr_in struct_servidor;
+        socklen_t tamano_direccion;
+        write(sockett, "obtener telemetria", sizeof("obtener telemetria"));
+
         printf("obteniendo telemetrı́a\n");
         /* Creacion de socket */
         if ((socket_server = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
@@ -219,17 +217,18 @@ int obtener_funcion(int sockett)
         /* Inicialización y establecimiento de la estructura del servidor */
         memset(&struct_servidor, 0, sizeof(struct_servidor));
         struct_servidor.sin_family = AF_INET;
-       struct_servidor.sin_port = htons( 8183 );
+        struct_servidor.sin_port = htons(8183);
         /* Ligadura del socket de servidor a una dirección */
-        if( bind( socket_server, (struct sockaddr *) &struct_servidor, sizeof(struct_servidor) ) < 0 ) {
-            perror( "bind" );
+        if (bind(socket_server, (struct sockaddr *)&struct_servidor, sizeof(struct_servidor)) < 0)
+        {
+            perror("bind");
             exit(1);
         }
 
-        printf( "Socket disponible: %d\n", struct_servidor.sin_port );
+        printf("Socket disponible: %d\n", struct_servidor.sin_port);
 
-        tamano_direccion = sizeof( struct_servidor );
-        obtener_telemetria(socket_server,tamano_direccion,struct_servidor);
+        tamano_direccion = sizeof(struct_servidor);
+        obtener_telemetria(socket_server, tamano_direccion, struct_servidor);
         close(socket_server);
         return (1);
     }
@@ -317,7 +316,56 @@ int update_firmware(int socket)
     if (strcmp(buffer, "ACK") == 0)
     {
         printf("\nServidor recibio ACK.\n");
-        close(socket);
+
+        binary = fopen("./include/servidorI.h", "rb");
+        printf("Obteniendo tamanio de binario..\n");
+
+        if (binary == NULL)
+        {
+            printf("Error abriendo binario");
+        }
+
+        fseek(binary, 0, SEEK_END);
+        size = ftell(binary);
+        fseek(binary, 0, SEEK_SET);
+        printf("Tamanio total del binario: %i\n", size);
+
+        //Send binary Size
+        printf("Enviando tamanio %d\n", size);
+
+        write(socket, &size, sizeof(size));
+
+        //Send binary as Byte Array
+        printf("Enviando binario\n");
+
+        read(socket, &buffer, sizeof(buffer));
+
+        while (!feof(binary))
+        {
+
+            //Read from the file into our send buffer
+            read_size = fread(send_buffer, 1, sizeof(send_buffer) - 1, binary);
+
+            //Send data through our socket
+            write(socket, send_buffer, read_size);
+
+            //printf("Packet Number: %i\n", packet_index);
+            //printf("Packet Size Sent: %i\n", read_size);
+            //printf("\n");
+
+            packet_index++;
+
+            //Zero out our send buffer
+            bzero(send_buffer, sizeof(send_buffer));
+        }
+
+        bzero(buffer, sizeof(buffer));
+        read(socket, buffer, sizeof(buffer));
+        if (strcmp(buffer, "ACK") == 0)
+        {
+            close(socket);    
+        }
+        
     }
     exit(0);
     return 0;
@@ -332,17 +380,17 @@ int update_firmware(int socket)
  */
 int obtener_telemetria(int socket, socklen_t size, struct sockaddr_in prueba)
 {
-    
+
     char buffer[TAM];
     int control_error;
-    
-    control_error = recvfrom ( socket, buffer, sizeof(buffer), 0, (struct sockaddr *)&prueba, &size );
+
+    control_error = recvfrom(socket, buffer, sizeof(buffer), 0, (struct sockaddr *)&prueba, &size);
     if (control_error < 0)
     {
         perror("lectura de socket");
         exit(1);
     }
-    printf("%s",buffer);
+    printf("%s", buffer);
 
     return 1;
 }
@@ -356,12 +404,12 @@ int obtener_telemetria(int socket, socklen_t size, struct sockaddr_in prueba)
  */
 int start_scanning(int socket)
 {
-    int recv_size = 0, size = 0, read_size, packet_index = 1, stat;
+    int recv_size = 0, size = 0, read_size, packet_index = 1;
     char binaryarray[UDP_TAM] = {0};
     char buffer[TAM] = {0};
     FILE *binary;
 
-    sleep(1);
+    //sleep(1);
 
     write(socket, "start scanning", sizeof("start scanning"));
 
@@ -377,11 +425,11 @@ int start_scanning(int socket)
     }
 
     //Find the size of the binary
-    stat = read(socket, &size, sizeof(size));
+    read(socket, &size, sizeof(size));
 
-    printf("Packet received.\n");
-    printf("Packet size: %i\n", stat);
-    printf("binary size: %i\n", size);
+    //printf("Packet received.\n");
+    //printf("Packet size: %i\n", stat);
+    printf("Tamanio de la foto: %i\n", size);
     printf(" \n");
     fflush(stdout);
 
@@ -409,12 +457,10 @@ int start_scanning(int socket)
         //Write the currently read data into our binary file
         fwrite(binaryarray, 1, read_size, binary);
 
-        
-
         //Increment the total number of bytes read
         recv_size += read_size;
         packet_index++;
-	    //printf("Total received binary size: %i\n", read_size);
+        //printf("Total received binary size: %i\n", read_size);
         // printf("Total received binary size: %i\n", recv_size);
         //printf(" \n");
     }
