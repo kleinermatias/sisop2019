@@ -317,7 +317,7 @@ int update_firmware(int socket)
     {
         printf("\nServidor recibio ACK.\n");
 
-        binary = fopen("./include/servidorI.h", "rb");
+        binary = fopen("./include/clienteI2.h", "rb");
         printf("Obteniendo tamanio de binario..\n");
 
         if (binary == NULL)
