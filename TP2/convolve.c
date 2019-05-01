@@ -25,13 +25,14 @@ struct arr2d
     float **m;
 };
 
-float convolve(float **a, float b[][WY], struct arr2d pipa);
-int pruebaaa(float data_out[][NY], int punterox,int punteroy);
+float convolve(float **a, float b[][WY]);
+int escribir_nc(float data_out[][NY], int punterox,int punteroy);
 
 int main()
 {
 
     float data_out[NX][NY];
+    float data_in[NX][NY];
     float matriz_w[WX][WY] =
         {
             {-1, -1, -1}, /*  initializers for row indexed by 0 */
@@ -39,13 +40,10 @@ int main()
             {-1, -1, -1}  /*  initializers for row indexed by 2 */
         };
 
-    struct arr2d matix;
-    struct arr2d resultado;
-    struct arr2d pruebita;
+    struct arr2d matriz_resultado_NX_NY;
+    struct arr2d matriz_resultado_3_3;
 
-    int ncid, varid;
-    float data_in[NX][NY];
-    int retval;
+    int ncid, varid, retval;
 
     size_t start[2] = {0};
     size_t conteo[2] = {0};
@@ -53,40 +51,67 @@ int main()
     conteo[0] = NX;
     conteo[1] = NX;
 
-    resultado.m = malloc(NX * sizeof(float *));
+    /** malloc y inicializacion de matriz **/
+    matriz_resultado_NX_NY.m = malloc(NX * sizeof(float *));
     for (int i = 0; i < NX; i++)
     {
-        resultado.m[i] = malloc(NX * sizeof(float));
+        matriz_resultado_NX_NY.m[i] = malloc(NX * sizeof(float));
     }
 
-    pruebita.m = malloc(5 * sizeof(float *));
-    for (int i = 0; i < 5; i++)
+    matriz_resultado_3_3.m = malloc(3 * sizeof(float *));
+    for (int i = 0; i < 3; i++)
     {
-        pruebita.m[i] = malloc(5 * sizeof(float));
+        matriz_resultado_3_3.m[i] = malloc(3 * sizeof(float));
     }
 
-    for (int porahi = 0; porahi < (MAXMO / NX); porahi++)
+
+
+
+                for (int i = 0; i < NX; i++)
+            {
+                for (int j = 0; j < NX; j++)
+                {
+                    matriz_resultado_NX_NY.m[i][j] = 0;
+                }
+            }
+
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    if (i == j)
+                    {
+                        matriz_resultado_3_3.m[i][j] = 0;
+                    }
+                    else
+                    {
+                        matriz_resultado_3_3.m[i][j] = 0;
+                    }
+                }
+            }
+
+
+
+    /** Aca desplazo los pedacitos de matriz **/
+    for (int desplazamiento_x = 0; desplazamiento_x < (MAXMO / NX); desplazamiento_x++)
     {
-        for (int porahiy = 0; porahiy < (MAXMO / NY); porahiy++)
+        for (int desplazamiento_y = 0; desplazamiento_y < (MAXMO / NY); desplazamiento_y++)
         {
-            start[0] = porahi * NX;
-            start[1] = porahiy * NY;
+            start[0] = desplazamiento_x * NX;
+            start[1] = desplazamiento_y * NY;
             if ((retval = nc_open("/home/matias/Documentos/sisop2019/TP2/pepe.nc", NC_NOWRITE, &ncid)))
-                //ERR(retval);
-                printf("o");
+                ERR(retval);
 
             if ((retval = nc_inq_varid(ncid, "CMI", &varid)))
-                //ERR(retval);
-                printf("o");
+                ERR(retval);
 
             if ((retval = nc_get_vara_float(ncid, varid, start, conteo, &data_in[0][0])))
-                //ERR(retval);
-                printf("o");
+                ERR(retval);
             
 
             if ((retval = nc_close(ncid)))
-                //ERR(retval);
-                printf("o");
+                ERR(retval);
+            
             nc_close(ncid);
 
             
@@ -106,82 +131,62 @@ int main()
            //printf("%lf",(float)(0.0 / 0.0)*10);
            //return (0);
 
-            for (int i = 0; i < NX; i++)
-            {
-                for (int j = 0; j < NX; j++)
-                {
-                    resultado.m[i][j] = 0;
-                }
-            }
 
-            for (int i = 0; i < 3; i++)
-            {
-                for (int j = 0; j < 3; j++)
-                {
-                    if (i == j)
-                    {
-                        pruebita.m[i][j] = 0;
-                    }
-                    else
-                    {
-                        pruebita.m[i][j] = 0;
-                    }
-                }
-            }
 
             for (int pixel_x = 1; pixel_x < NX - 1; pixel_x++)
             {
                 for (int pixel_y = 1; pixel_y < NY - 1; pixel_y++)
                 {
-                    int pepe = 0;
+                    int indice_x = 0;
                     for (int x = pixel_x - 1; x < pixel_x + 2; x++)
                     {
 
-                        int pepo = 0;
+                        int indice_y = 0;
                         for (int y = pixel_y - 1; y < pixel_y + 2; y++)
                         {
                             if (data_in[x][y]==-1){
-                                pruebita.m[pepe][pepo]=(float)(0.0 / 0.0);
+                                matriz_resultado_3_3.m[indice_x][indice_y]=(float)(0.0 / 0.0);
                             }
                             else {
-                                pruebita.m[pepe][pepo] = data_in[x][y];
+                                matriz_resultado_3_3.m[indice_x][indice_y] = data_in[x][y];
                             }
-                            
-                            pepo++;
+                            indice_y++;
                         }
-                        pepe++;
+                        indice_x++;
                     }
-                    resultado.m[pixel_x][pixel_y] = convolve(pruebita.m, matriz_w, resultado);
+                    matriz_resultado_NX_NY.m[pixel_x][pixel_y] = convolve(matriz_resultado_3_3.m, matriz_w);
                 }
             }
             
-            //printf("Resultado: \n ");
+            
             for (int i = 0; i < NX; i++)
             {
                 for (int j = 0; j < NX; j++)
                 {
-                    data_out[i][j] = resultado.m[i][j];
-                    //printf("%lf ", resultado.m[i][j]);
+                    data_out[i][j] = ((float)0.000317469)*matriz_resultado_NX_NY.m[i][j];
                 }
-                //printf(" \n ");
             }
 
-
-            pruebaaa(data_out, porahi,porahiy);
+            escribir_nc(data_out, desplazamiento_x,desplazamiento_y);
         }
     }
-    for (int i = 0; i < 5; i++)
+
+    for (int i = 0; i < 3; i++)
     {
-        free(resultado.m[i]);
+        free(matriz_resultado_3_3.m[i]);
     }
-    free(resultado.m);
+    free(matriz_resultado_3_3.m);
+    
+    for (int i = 0; i < NX; i++)
+    {
+        free(matriz_resultado_NX_NY.m[i]);
+    }
+    free(matriz_resultado_NX_NY.m);
     return 0;
 }
 
-float convolve(float **a, float b[][WY], struct arr2d pipa)
-{
-    //float ave = 0;
-    
+float convolve(float **a, float b[][WY])
+{   
     float ave = 0;
     for (int i = 0; i < WX; i++)
     {
@@ -190,14 +195,12 @@ float convolve(float **a, float b[][WY], struct arr2d pipa)
             ave = ave + (a[i][j] * b[i][j]);
         }
     }
-
-//ave=((float)0.000317469)*a[1][1];
     return ave;
 }
 
-int pruebaaa(float data_out[][NY], int punterox, int punteroy)
+int escribir_nc(float data_out[][NY], int punterox, int punteroy)
 {
-    //printf("%i\n", punteroy);
+    
     /* When we create netCDF variables and dimensions, we get back an
     * ID for each one. */
     int ncid, x_dimid, y_dimid, varid;
@@ -212,16 +215,12 @@ int pruebaaa(float data_out[][NY], int punterox, int punteroy)
     /* Loop indexes, and error handling. */
     int x, y, retval;
 
-    /* Always check the return code of every netCDF function call. In
-    * this example program, any retval which is not equal to NC_NOERR
-    * (0) will cause the program to print an error message and exit
-    * with a non-zero return code. */
+    
 
     /* Create the file. The NC_CLOBBER parameter tells netCDF to
     * overwrite this file, if it already exists.*/
     if ((punteroy == 0) && (punterox == 0))
     {
-           // printf(" a\n ");
         if ((retval = nc_create("/home/matias/Documentos/sisop2019/TP2/pepe2.nc", NC_CLOBBER, &ncid)))
             ERR(retval);
         /* Define the dimensions. NetCDF will hand back an ID for each. */
@@ -231,28 +230,27 @@ int pruebaaa(float data_out[][NY], int punterox, int punteroy)
             ERR(retval);
 
         /* The dimids array is used to pass the IDs of the dimensions of
-    * the variable. */
+        * the variable. */
         dimids[0] = x_dimid;
         dimids[1] = y_dimid;
 
         /* Define the variable. The type of the variable in this case is
-    * NC_FLOAT (4-byte integer). */
+        * NC_FLOAT (4-byte integer). */
         if ((retval = nc_def_var(ncid, "CMI", NC_FLOAT, NDIMS,
                                  dimids, &varid)))
             ERR(retval);
 
         /* End define mode. This tells netCDF we are done defining
-    * metadata. */
+        * metadata. */
         if ((retval = nc_enddef(ncid)))
             ERR(retval);
     }
     else
     {
         if ((retval = nc_open("/home/matias/Documentos/sisop2019/TP2/pepe2.nc", NC_WRITE | NC_SHARE, &ncid)))
-            printf("AAAAAAA\n");
+            ERR(retval);
         if ((retval = nc_inq_varid(ncid, "CMI", &varid)))
-            //ERR(retval);
-            printf("o");
+            ERR(retval);
     }
 
     /* Write the pretend data to the file. Although netCDF supports
@@ -260,12 +258,11 @@ int pruebaaa(float data_out[][NY], int punterox, int punteroy)
     * the data in one operation. */
     if ((retval = nc_put_vara_float(ncid, varid, start, conteo, &data_out[0][0])))
         ERR(retval);
-    //printf("AAAAAAA\n");
+    
     /* Close the file. This frees up any internal netCDF resources
     * associated with the file, and flushes any buffers. */
     if ((retval = nc_close(ncid)))
         ERR(retval);
-    //system("ncdump -v CMI pepe2.nc");
-    //printf("*** SUCCESS writing example file simple_xy.nc!\n");
+    
     return 0;
 }
