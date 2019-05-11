@@ -175,31 +175,11 @@ int escribir_nc(float *data_out, int punterox, int punteroy)
     /* Create the file. The NC_CLOBBER parameter tells netCDF to
     * overwrite this file, if it already exists.*/
 
-        if ((retval = nc_create("/home/matias/Documentos/sisop2019/TP2/pepe2.nc", NC_CLOBBER, &ncid)))
-            ERR(retval);
-        /* Define the dimensions. NetCDF will hand back an ID for each. */
-        if ((retval = nc_def_dim(ncid, "x", NX, &x_dimid)))
-            ERR(retval);
-        if ((retval = nc_def_dim(ncid, "y", NX, &y_dimid)))
-            ERR(retval);
-
-        /* The dimids array is used to pass the IDs of the dimensions of
-        * the variable. */
-        dimids[0] = x_dimid;
-        dimids[1] = y_dimid;
-
-        /* Define the variable. The type of the variable in this case is
-        * NC_FLOAT (4-byte integer). */
-        if ((retval = nc_def_var(ncid, "CMI", NC_FLOAT, NDIMS,
-                                 dimids, &varid)))
-            ERR(retval);
-
-        /* End define mode. This tells netCDF we are done defining
-        * metadata. */
-        if ((retval = nc_enddef(ncid)))
-            ERR(retval);
-    
-    
+    if ((retval = nc_open("/home/matias/Documentos/sisop2019/TP2/pepe2.nc", NC_WRITE | NC_SHARE, &ncid)))
+        ERR(retval);
+    if ((retval = nc_inq_varid(ncid, "CMI", &varid)))
+        //ERR(retval);
+        ERR(retval);
 
     /* Write the pretend data to the file. Although netCDF supports
     * reading and writing subsets of data, in this case we write all
