@@ -1,0 +1,33 @@
+#!/bin/bash
+> ./statics
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+./prueba
+python2.7 ./pyth.py

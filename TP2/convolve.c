@@ -9,7 +9,7 @@
 
 #define WX 3
 #define WY 3
-
+#define num_thr 16
 #define NX 21696
 #define NY 21696
 
@@ -48,7 +48,7 @@ int main()
     start[0] = 0;
     start[1] = 0;
 
-    if ((retval = nc_open("/home/matias/Documentos/sisop2019/TP2/pepe.nc", NC_NOWRITE, &ncid)))
+    if ((retval = nc_open("./pepe.nc", NC_NOWRITE, &ncid)))
         ERR(retval);
 
     if ((retval = nc_inq_varid(ncid, "CMI", &varid)))
@@ -62,6 +62,7 @@ int main()
         ERR(retval);
 
     nc_close(ncid);
+#pragma omp parallel for num_threads(num_thr)
     for (int j = 1; j < NX - 1; j++)
     {
         for (int i = 1; i < NX - 1; i++)
@@ -134,7 +135,7 @@ void convolve(float *data_in, float *data_out, float c[][WY])
       exit( EXIT_FAILURE );
     }
     
-    #pragma omp parallel for num_threads(4) 
+    #pragma omp parallel for num_threads(num_thr) 
     for (j = 1; j < NX - 1; j++)
     {
         for (i = 1; i < NX - 1; i++)
@@ -150,9 +151,17 @@ void convolve(float *data_in, float *data_out, float c[][WY])
     }
 
    u_int64_t delta_us = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
-   u_int64_t total_time_s = delta_us/1000000;
-   u_int64_t total_time_ms = (delta_us%1000000)/1000;
-   printf("TERMINO DESCARGA EN %lds %ldms %ldus\n",total_time_s, total_time_ms, delta_us%1000);
+   //u_int64_t total_time_s = delta_us/1000000;
+   //u_int64_t total_time_ms = (delta_us%1000000)/1000;
+   //u_int64_t total_total = delta_us;
+   //printf("TERMINO DESCARGA EN %lds %ldms %ldus\n",total_time_s, total_time_ms, delta_us%1000);
+   //printf("%ld",delta_us);
+   FILE *fPtr;
+fPtr = fopen("./statics", "a");
+char buff[500];
+// copy to buffer
+sprintf(buff, "%ld\n", delta_us);
+fputs(buff, fPtr);
 }
 
 int escribir_nc(float *data_out, int punterox, int punteroy)
@@ -175,7 +184,7 @@ int escribir_nc(float *data_out, int punterox, int punteroy)
     /* Create the file. The NC_CLOBBER parameter tells netCDF to
     * overwrite this file, if it already exists.*/
 
-    if ((retval = nc_open("/home/matias/Documentos/sisop2019/TP2/pepe2.nc", NC_WRITE | NC_SHARE, &ncid)))
+    if ((retval = nc_open("./pepe2.nc", NC_WRITE | NC_SHARE, &ncid)))
         ERR(retval);
     if ((retval = nc_inq_varid(ncid, "CMI", &varid)))
         //ERR(retval);
