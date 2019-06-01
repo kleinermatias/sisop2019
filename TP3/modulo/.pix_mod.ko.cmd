@@ -1,0 +1,1 @@
+cmd_/root/modulo/pix_mod.ko := ld -r  -EL -T ./scripts/module-common.lds -T ./arch/arm/kernel/module.lds  --build-id  -o /root/modulo/pix_mod.ko /root/modulo/pix_mod.o /root/modulo/pix_mod.mod.o ;  true
