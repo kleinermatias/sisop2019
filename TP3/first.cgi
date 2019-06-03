@@ -45,13 +45,16 @@ echo "</title></head><body>"
 
 echo ""
 
-echo "<h1>Info de memoria. Se obtiene con 'free -m'</h1>"
+echo "<h2>Info de memoria. Se obtiene con 'free -m'</h2>"
 echo "<pre> $(free -m) </pre>"
 
-echo "<h1>Info de disco. Se obtiene con 'df -h':</h1>"
+echo "<h2>Info de disco. Se obtiene con 'df -h':</h2>"
 echo "<pre> $(df -h) </pre>"
 
-echo "<h1>Fecha, uptime y usuarios activos. Se obtiene con 'w'</h1>"
+echo "<h2>CPU info. Se obtiene con 'cpu'</h2>"
+echo "<pre> $(echo $(cpu)) </pre>"
+
+echo "<h2>Fecha, uptime y usuarios activos. Se obtiene con 'w'</h2>"
 echo "<pre> $(w) </pre>"
 
 echo "</body></html>"

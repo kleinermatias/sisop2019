@@ -63,10 +63,6 @@
       <div class="col-lg-12 text-center">
         <h1 class="mt-5">Informacion sobre el sistema embebido</h1>
         <p class="lead">En esta seccion se muestra informacion del procesador, la memoria, el uptime, la fecha y hora actual</p>
-        <ul class="list-unstyled">
-          <li>Bootstrap 4.3.1</li>
-          <li>jQuery 3.4.1</li>
-        </ul>
       </div>
     </div>
   </div>
@@ -74,18 +70,30 @@
   <!-- Bootstrap core JavaScript -->
   <script src="vendor/jquery/jquery.slim.min.js"></script>
   <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-
 </body>
-<div class="container">
-<div class="card border-info" style="max-width: 100rem;">
-  <div class="card-header">INFO</div>
-  <div class="card-body text-info">
-    <h5 class="card-title">DietPi</h5>
-    <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-  </div>
-</div>
-</div>
+
+  <!-- Formulario Section -->
+  <section class="bg-primary text-white mb-0" id="Formulario">
+    <div class="container">
+      <h2 class="text-center text-uppercase text-white">Formulario</h2>
+	<!--form  method="get" action="./formulario/eFormulario_v2.cgi"-->
+	<form target="mod-iframe" method="get" enctype="multipart/form-data" class="form-inline d-flex" action="./formulario.cgi">
+	Ingresa un texto: <input name="anio" type="numero" placeholder="Por favor, ingresa año" />
+	<input name="dia" type="numero" placeholder="Por favor, ingresa dia" />
+	<div class="button">
+    	<button type="submit">Buscar</button>
+	</div>
+	</form>
+	<iframe name="mod-iframe" width="1200" height="500">
+        </iframe>
+    </div>
+</section>
+
 </html>
 
 <!--adding my own JS script file-->
 <script src="js/script.js"></script>
+
+
+
+
