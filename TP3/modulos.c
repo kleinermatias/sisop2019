@@ -20,5 +20,20 @@ FILE *pipe;
         fprintf(stdout, "%s", buffer);
     pclose(pipe);
 
-  return 0;
+
+   printf("\n \n mensajito del modulo cargado es>");
+
+
+    pipe = popen("dmesg", "r");
+    if (pipe == NULL)
+        return -1;  
+    while (fgets(buffer, sizeof(buffer), pipe) != NULL)
+        fprintf(stdout, "%s", buffer);
+    pclose(pipe);
+
+   system("sudo dmesg -C");
+
+
+return (0);
+
 }
