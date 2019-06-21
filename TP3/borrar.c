@@ -24,6 +24,9 @@ int main(int argc, char* argv[])
 	char path[100]={0};
         strcpy(path,"sudo rmmod ");
 	strcat(path,name);
-system(path);
+
+if(system(path)!=0){
+printf(" PEEEEEERO, no esta cargado ese modulo :c");
+}
 
 }

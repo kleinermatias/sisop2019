@@ -81,16 +81,17 @@
 <form action="./upload.cgi" method="post" enctype="multipart/form-data">
 <div class="col">
 <p>Modulo a cargar:<input type="file" name="module" /></p>
+<button class="btn btn-primary" name="Submit" type="submit">Subir</button>
 </div>
-    <button class="btn btn-primary" name="Submit" type="submit">Subir</button>
 </form>
 
 
 <form target="mod-iframe" enctype="multipart/form-data" class="form-inline d-flex" action="./borrar.cgi" method="get">
 <div class="col">
 <input name="moduloborrame" type="string" placeholder="Por favor, ingresa nombre modulo" />
-	</div>
 <button class="btn btn-primary" name="Submit" type="submit">Borrar</button>
+</div>
+
 <iframe name="mod-iframe" width="1200" height="30">
         </iframe>
 </form>
